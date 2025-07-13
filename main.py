@@ -1,4 +1,5 @@
 import importer
+import prompt_parser
 import scraper
 import statistics
 
@@ -16,6 +17,7 @@ def prepare_database():
 
 def main():
     # prepare_database()
+    prompt_parser.populate_table()
     statistics.get_user_stats()
     statistics.get_conversation_stats()
 

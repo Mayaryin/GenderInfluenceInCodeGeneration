@@ -195,7 +195,7 @@ def create_user_table():
             llms_go_back TEXT,
             llms_faster TEXT,
             llms_slower TEXT,
-            llms_prompt_enigneering TEXT,
+            llms_prompt_engineering TEXT,
             llms_approach TEXT,
             llms_describe_approach TEXT,
             llms_ethical_concerns TEXT,
@@ -206,7 +206,7 @@ def create_user_table():
             llms_ec_diversity_loss TEXT,
             llms_ec_other TEXT,
             llms_other_concerns TEXT,
-            llms_other_toughts TEXT
+            llms_other_thoughts TEXT
         );
     ''')
     print("Inserting data into table")
@@ -351,6 +351,81 @@ def create_code_blocks_table():
     connection.commit()
     connection.close()
     print("Table created with PRIMARY KEY")
+
+def create_gender_annotated_messages_table():
+    connection = sqlite3.connect("giicg.db")
+    cursor = connection.cursor()
+
+    print("Deleting tables")
+    cursor.execute("DROP TABLE IF EXISTS messages_annotated")
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS messages_annotated AS 
+        SELECT
+            m.message_id,
+            m.conversation_id,
+            m.role,
+            m.conversational,
+            u.gender,
+            u.user_id
+        FROM main.messages m
+        JOIN main.conversations c ON m.conversation_id = c.conversation_id
+        JOIN main.users u ON c.user_id = u.user_id
+        WHERE m.role = 'user'
+        ORDER BY u.user_id, m.conversation_id, m.message_order;
+    ''')
+    connection.commit()
+    connection.close()
+    print("Table created")
+
+
+def assign_most_used_model_versions():
+    conn = sqlite3.connect("giicg.db")
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conversation_model_version (
+            conversation_id INTEGER PRIMARY KEY,
+            assigned_model_version TEXT
+        );
+    ''')
+
+    # Step 2: Clear old data to refresh results (if you want to keep previous results, remove this)
+    cursor.execute('DELETE FROM conversation_model_version;')
+
+    # Step 3: Use a WITH clause to find the most used model_version per conversation
+    cursor.execute('''
+        WITH model_counts AS (
+            SELECT
+                conversation_id,
+                model_version,
+                COUNT(*) AS usage_count
+            FROM messages
+            WHERE model_version IS NOT NULL
+            GROUP BY conversation_id, model_version
+        ),
+        ranked_models AS (
+            SELECT
+                conversation_id,
+                model_version,
+                usage_count,
+                ROW_NUMBER() OVER (
+                    PARTITION BY conversation_id
+                    ORDER BY usage_count DESC, model_version ASC
+                ) AS row_rank
+            FROM model_counts
+        )
+        INSERT INTO conversation_model_version (conversation_id, assigned_model_version)
+        SELECT
+            conversation_id,
+            model_version
+        FROM ranked_models
+        WHERE row_rank = 1;
+    ''')
+
+    conn.commit()
+    conn.close()
+
+
 
 
 

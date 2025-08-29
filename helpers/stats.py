@@ -3,7 +3,7 @@ import pandas as pd
 from scipy import stats
 
 def get_user_stats():
-    connection = sqlite3.connect("giicg.db")
+    connection = sqlite3.connect("../giicg.db")
     cursor = connection.cursor()
     cursor.execute('''
                    SELECT gender, COUNT(*) FROM users WHERE users.lastpage > 2 GROUP BY gender;'''
@@ -39,10 +39,10 @@ def get_user_stats():
     print("Status: ", rows)
 
     cursor.execute('''
-                   SELECT llms_prompt_enigneering, gender, COUNT(*)
+                   SELECT llms_prompt_engineering, gender, COUNT(*)
                    FROM users
                    WHERE users.lastpage > 2
-                   GROUP BY llms_prompt_enigneering, gender;'''
+                   GROUP BY llms_prompt_engineering, gender;'''
                    )
     rows = cursor.fetchall()
     print("Prompt engineering: ", rows)
@@ -50,7 +50,7 @@ def get_user_stats():
     connection.close()
 
 def get_conversation_stats():
-    connection = sqlite3.connect("giicg.db")
+    connection = sqlite3.connect("../giicg.db")
     cursor = connection.cursor()
 
     cursor.execute('''
@@ -96,7 +96,7 @@ def make_average_convo_length_query():
 
 
 def get_average_convo_length():
-    connection = sqlite3.connect("giicg.db")
+    connection = sqlite3.connect("../giicg.db")
     cursor = connection.cursor()
     cursor.execute(make_average_convo_length_query())
     rows = cursor.fetchall()
@@ -130,6 +130,29 @@ def run_t_test_on_gender(df, dependent_variable):
     t_stat, p_value = stats.ttest_ind(male, female, equal_var=False)
 
     print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+
+
+def make_annotated_code_blocks_query():
+    return """SELECT 
+    cb.code_block_id,
+    cb.message_id,
+    cb.language,
+    cb.code_text,
+    m.conversation_id,
+    c.user_id,
+    u.gender
+
+FROM
+    code_blocks cb
+JOIN
+    messages m ON cb.message_id = m.message_id
+JOIN
+    conversations c ON m.conversation_id = c.conversation_id
+JOIN users u on c.user_id = u.user_id
+WHERE
+    cb.language = 'python'
+    AND (LENGTH(cb.code_text) - LENGTH(REPLACE(cb.code_text, CHAR(10), ''))) > 4
+        """
 
 
 

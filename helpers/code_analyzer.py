@@ -3,14 +3,16 @@ import pandas as pd
 import tempfile
 import subprocess
 import os
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 
-from statistics import run_t_test_on_gender
+from helpers.stats import run_t_test_on_gender
 
 pd.set_option("display.max_columns", None)  # Show all columns
 pd.set_option("display.width", None)        # Don't wrap lines (use full width)
 pd.set_option("display.max_colwidth", None) # Show full content in each cell
 
-conn = sqlite3.connect("giicg.db")
+conn = sqlite3.connect("../giicg.db")
 
 # Filtering out code blocks that are shorter than 5 lines
 query = """SELECT 
@@ -35,8 +37,8 @@ WHERE
         """
 
 df = pd.read_sql_query(query, conn)
-df_female = df[df['gender'] == 'Woman (cisgender)'].sample(n=1, random_state=42)
-df_male = df[df['gender'] == 'Man (cisgender)'].sample(n=1, random_state=42)
+df_female = df[df['gender'] == 'Woman (cisgender)'].sample(n=10, random_state=42)
+df_male = df[df['gender'] == 'Man (cisgender)'].sample(n=10, random_state=42)
 combined_df = pd.concat([df_female, df_male], ignore_index=True)
 
 def run_pylint_on_code(code):
@@ -100,5 +102,14 @@ if __name__ == "__main__":
 
     # t-test
     run_t_test_on_gender(combined_df, "pylint_score")
+
+    # plot
+    ax = combined_df.groupby('gender')['pylint_score'].mean().plot(kind="bar", title="Average Pylint Score by Gender",
+                                                                   figsize=(12, 8))
+    ax.set_xlabel("Gender Group")
+    ax.set_ylabel("Average Pylint Score")
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
 
 

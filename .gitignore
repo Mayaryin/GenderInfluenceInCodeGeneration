@@ -1,3 +1,6 @@
 giicg.db
 *.csv
 .env
+raw_data
+*.db
+.html

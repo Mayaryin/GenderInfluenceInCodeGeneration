@@ -2,18 +2,13 @@ import sqlite3
 import pandas as pd
 
 
-def import_raw_data_to_database(filename):
+def import_raw_data_to_database(connection, filename):
     df = pd.read_csv(filename)
     print("Columns in CSV:", df.columns)
-    connection = sqlite3.connect("giicg.db")
     df.to_sql("raw_data", connection, if_exists="replace")
-    connection.close()
+    
 
-
-def create_working_data_table():
-    connection = sqlite3.connect("giicg.db")
-    cursor = connection.cursor()
-
+def create_working_data_table(connection, cursor):
     cursor.execute("PRAGMA foreign_keys = ON;")
 
     print("Deleting table")
@@ -86,7 +81,7 @@ def create_working_data_table():
             llms_go_back TEXT,
             llms_faster TEXT,
             llms_slower TEXT,
-            llms_prompt_enigneering TEXT,
+            llms_prompt_engineering TEXT,
             llms_approach TEXT,
             llms_describe_approach TEXT,
             llms_ethical_concerns TEXT,
@@ -97,7 +92,7 @@ def create_working_data_table():
             llms_ec_diversity_loss TEXT,
             llms_ec_other TEXT,
             llms_other_concerns TEXT,
-            llms_other_toughts TEXT
+            llms_other_thoughts TEXT
         );
     ''')
 
@@ -116,10 +111,10 @@ def create_working_data_table():
             c5_mode, c5_text, c5_share_link, c5_llm_version, c5_satisfaction, c5_explain_satisfaction, c5_rated_complexity,
 
             llms_helpful, llms_enjoy, llms_go_back, llms_faster, llms_slower,
-            llms_prompt_enigneering, llms_approach, llms_describe_approach,
+            llms_prompt_engineering, llms_approach, llms_describe_approach,
             llms_ethical_concerns, llms_ec_bias, llms_ec_discrimination, llms_ec_skill_loss,
             llms_ec_learn_less, llms_ec_diversity_loss, llms_ec_other, llms_other_concerns,
-            llms_other_toughts
+            llms_other_thoughts
         )
         SELECT
             "Response ID", "Last page", "Seed",
@@ -143,29 +138,23 @@ def create_working_data_table():
     ''')
 
     connection.commit()
-    connection.close()
     print("Table created with PRIMARY KEY and data inserted.")
 
-def clean_up_database():
-    connection = sqlite3.connect("giicg.db")
-    cursor = connection.cursor()
+def clean_up_database(connection, cursor):
     print("Deleting tables")
+    cursor.execute("DROP TABLE IF EXISTS raw_data")
+    cursor.execute("DROP TABLE IF EXISTS working_data")
     cursor.execute("DROP TABLE IF EXISTS users")
     cursor.execute("DROP TABLE IF EXISTS conversations")
     cursor.execute("DROP TABLE IF EXISTS messages")
     cursor.execute("DROP TABLE IF EXISTS code_blocks")
-    connection.close()
 
 
-
-def create_user_table():
-    connection = sqlite3.connect("giicg.db")
-    cursor = connection.cursor()
-
-    cursor.execute("PRAGMA foreign_keys = ON;")  # Enable FK constraints
-
+def create_user_table(connection, cursor):
+    cursor.execute("PRAGMA foreign_keys = OFF;")  # Disable FK constraints for re-creation of the table when inserting new survey data
     print("Deleting tables")
     cursor.execute("DROP TABLE IF EXISTS users")
+    cursor.execute("PRAGMA foreign_keys = ON;")  # Enable FK constraints
 
     print("Creating table schema for user table with PRIMARY KEY")
     cursor.execute('''
@@ -209,47 +198,49 @@ def create_user_table():
             llms_other_thoughts TEXT
         );
     ''')
-    print("Inserting data into table")
-    cursor.execute('''
-               INSERT INTO users (
-                   user_id, lastpage, seed,
-                   
-                     age, education, status, study_field, study_year, work_field,
-                     work_exp_years,
-                     context_work, context_university, context_personal, context_other,
-                     usage_frequency, eng_native, eng_level, gender,
-                     
-                     llms_helpful, llms_enjoy, llms_go_back, llms_faster, llms_slower,
-                     llms_prompt_enigneering, llms_approach, llms_describe_approach,
-                     llms_ethical_concerns, llms_ec_bias, llms_ec_discrimination,
-                     llms_ec_skill_loss,
-                     llms_ec_learn_less, llms_ec_diversity_loss, llms_ec_other,
-                     llms_other_concerns,
-                     llms_other_toughts
-               )
-               SELECT 
-                   user_id, lastpage, seed,
-                   age, education, status, study_field, study_year, work_field,
-                   work_exp_years,
-                   context_work, context_university, context_personal, context_other,
-                   usage_frequency, eng_native, eng_level, gender,  
-                   llms_helpful, llms_enjoy, llms_go_back, llms_faster, llms_slower,
-                   llms_prompt_enigneering, llms_approach, llms_describe_approach,
-                   llms_ethical_concerns, llms_ec_bias, llms_ec_discrimination,
-                   llms_ec_skill_loss,
-                     llms_ec_learn_less, llms_ec_diversity_loss, llms_ec_other,
-                     llms_other_concerns,
-                     llms_other_toughts
-               FROM working_data
-               ''')
     connection.commit()
-    connection.close()
-    print("Table created with PRIMARY KEY and data inserted.")
+    print("Table created with PRIMARY KEY")
 
-def create_conversations_table():
-    connection = sqlite3.connect("giicg.db")
-    cursor = connection.cursor()
+def fill_user_table(connection, cursor):
+        print("Inserting data into table")
+        cursor.execute('''
+                   INSERT INTO users (
+                       user_id, lastpage, seed,
+                       
+                         age, education, status, study_field, study_year, work_field,
+                         work_exp_years,
+                         context_work, context_university, context_personal, context_other,
+                         usage_frequency, eng_native, eng_level, gender,
+                         
+                         llms_helpful, llms_enjoy, llms_go_back, llms_faster, llms_slower,
+                         llms_prompt_engineering, llms_approach, llms_describe_approach,
+                         llms_ethical_concerns, llms_ec_bias, llms_ec_discrimination,
+                         llms_ec_skill_loss,
+                         llms_ec_learn_less, llms_ec_diversity_loss, llms_ec_other,
+                         llms_other_concerns,
+                         llms_other_thoughts
+                   )
+                   SELECT 
+                       user_id, lastpage, seed,
+                       age, education, status, study_field, study_year, work_field,
+                       work_exp_years,
+                       context_work, context_university, context_personal, context_other,
+                       usage_frequency, eng_native, eng_level, gender,  
+                       llms_helpful, llms_enjoy, llms_go_back, llms_faster, llms_slower,
+                       llms_prompt_engineering, llms_approach, llms_describe_approach,
+                       llms_ethical_concerns, llms_ec_bias, llms_ec_discrimination,
+                       llms_ec_skill_loss,
+                         llms_ec_learn_less, llms_ec_diversity_loss, llms_ec_other,
+                         llms_other_concerns,
+                         llms_other_thoughts
+                   FROM working_data
+                   ''')
+        connection.commit()
 
+
+        print("Data inserted.")
+
+def create_conversations_table(connection, cursor):
     cursor.execute("PRAGMA foreign_keys = ON;")  # Enable FK constraints
 
     print("Deleting tables")
@@ -300,12 +291,9 @@ def create_conversations_table():
     conversations_df.to_sql('conversations', connection, if_exists='append', index=False)
 
     connection.commit()
-    connection.close()
     print("Table created with PRIMARY KEY and data inserted.")
 
-def create_messages_table():
-    connection = sqlite3.connect("giicg.db")
-    cursor = connection.cursor()
+def create_messages_table(connection, cursor):
 
     cursor.execute("PRAGMA foreign_keys = ON;")  # Enable FK constraints
 
@@ -326,13 +314,10 @@ def create_messages_table():
 
                    ''')
     connection.commit()
-    connection.close()
+     
     print("Table created with PRIMARY KEY")
 
-def create_code_blocks_table():
-    connection = sqlite3.connect("giicg.db")
-    cursor = connection.cursor()
-
+def create_code_blocks_table(connection, cursor):
     cursor.execute("PRAGMA foreign_keys = ON;")  # Enable FK constraints
 
     print("Deleting tables")
@@ -349,22 +334,22 @@ def create_code_blocks_table():
                     );
                    ''')
     connection.commit()
-    connection.close()
+     
     print("Table created with PRIMARY KEY")
 
-def create_gender_annotated_messages_table():
-    connection = sqlite3.connect("giicg.db")
-    cursor = connection.cursor()
-
+def create_prompts_table(connection, cursor):
     print("Deleting tables")
-    cursor.execute("DROP TABLE IF EXISTS messages_annotated")
+    cursor.execute("DROP TABLE IF EXISTS prompts")
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS messages_annotated AS 
+        CREATE TABLE IF NOT EXISTS prompts AS 
         SELECT
             m.message_id,
             m.conversation_id,
             m.role,
+            m.message_text,
             m.conversational,
+            m.code,
+            m.other,
             u.gender,
             u.user_id
         FROM main.messages m
@@ -374,14 +359,10 @@ def create_gender_annotated_messages_table():
         ORDER BY u.user_id, m.conversation_id, m.message_order;
     ''')
     connection.commit()
-    connection.close()
+     
     print("Table created")
 
-
-def assign_most_used_model_versions():
-    conn = sqlite3.connect("giicg.db")
-    cursor = conn.cursor()
-
+def assign_most_used_model_versions(connection, cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS conversation_model_version (
             conversation_id INTEGER PRIMARY KEY,
@@ -422,8 +403,8 @@ def assign_most_used_model_versions():
         WHERE row_rank = 1;
     ''')
 
-    conn.commit()
-    conn.close()
+    connection.commit()
+     
 
 
 

@@ -4,11 +4,12 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
-from statistics import make_average_convo_length_query, make_llm_version_query, make_code_blocks_with_convo_id_query
+from helpers.stats import make_average_convo_length_query, make_code_blocks_with_convo_id_query, \
+    make_annotated_code_blocks_query
 
 plt.style.use('ggplot')
 
-conn = sqlite3.connect('giicg.db')
+conn = sqlite3.connect('../giicg.db')
 user_df = pd.read_sql_query("SELECT * FROM users WHERE lastpage > 2", conn)
 
 ax = user_df["gender"].value_counts().sort_values().plot(kind="bar", title="Gender Distribution", figsize=(12, 8))
@@ -53,7 +54,7 @@ plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.show()
 
-ax = user_df["llms_prompt_enigneering"].value_counts().sort_values().plot(kind="bar", title="I am employing specific prompting techniques when prompting LLMs", figsize=(12, 8))
+ax = user_df["llms_prompt_engineering"].value_counts().sort_values().plot(kind="bar", title="I am employing specific prompting techniques when prompting LLMs", figsize=(12, 8))
 ax.set_xlabel("Response")
 ax.set_ylabel("Count")
 plt.xticks(rotation=45, ha='right')
@@ -118,6 +119,16 @@ language_df = pd.read_sql_query(query, conn)
 
 ax = language_df["language"].value_counts().sort_index().plot(kind="bar", title="Programming Languages", figsize=(12, 8))
 ax.set_xlabel("Programming Languages")
+ax.set_ylabel("Number of Code Blocks")
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+query = make_annotated_code_blocks_query()
+code_blocks_df = pd.read_sql_query(query, conn)
+
+ax = language_df["c.user_id"].value_counts().sort_index().plot(kind="bar", title="Code Blocks per User", figsize=(12, 8))
+ax.set_xlabel("User ID")
 ax.set_ylabel("Number of Code Blocks")
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()

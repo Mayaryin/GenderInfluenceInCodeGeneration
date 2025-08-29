@@ -18,7 +18,7 @@ Dependencies:
 - `python-dotenv` for loading environment variables.
 """
 
-from helpers import importer, prompt_parser, scraper, manual_importer
+from helpers import importer, prompt_parser
 import sqlite3
 from dotenv import load_dotenv
 import os

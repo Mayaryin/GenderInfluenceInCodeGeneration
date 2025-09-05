@@ -1,7 +1,7 @@
 from helpers.Message import Message
 
-CONVERSATION_ID = 29
-USER_ID = 36
+CONVERSATION_ID = 37
+USER_ID = 29
 MODEL_VERSION = "Claude 3.5 Sonnet"
 
 message_0 = Message(
@@ -274,4 +274,4 @@ message_3 = Message(
     }]
 )
 
-user_29_convo_36 = [message_0, message_1, message_2, message_3]
+user_29_convo_37 = [message_0, message_1, message_2, message_3]

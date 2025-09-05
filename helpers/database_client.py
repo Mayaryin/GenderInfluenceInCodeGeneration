@@ -1,10 +1,10 @@
-def insert_message(connection, conversation_id, role, message_text, message_order, model_version=None):
+def insert_message(connection, conversation_id, role, message_text,message_order, model_version=None, conversational=None, code=None, other=None):
     cursor = connection.cursor()
     cursor.execute(
         ''' INSERT INTO messages (
-        conversation_id, role, message_text, message_order, model_version) 
-            VALUES (?, ?, ?, ?, ?) ''',
-        (conversation_id, role, message_text, message_order, model_version)
+        conversation_id, role, message_text, message_order, model_version, conversational, code, other) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?) ''',
+        (conversation_id, role, message_text, message_order, model_version, conversational, code, other)
     )
     message_id = cursor.lastrowid
     return message_id

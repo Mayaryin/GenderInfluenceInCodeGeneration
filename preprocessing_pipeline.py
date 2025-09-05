@@ -23,6 +23,8 @@ import sqlite3
 from dotenv import load_dotenv
 import os
 
+from helpers.private import manual_importer
+
 load_dotenv()
 FILENAME =  os.getenv('SURVEY_PATH')
 print(FILENAME)
@@ -41,9 +43,9 @@ def prepare_database(conn, cur, filename):
 
 def fill_tables(conn, cur):
     #scraper.populate_messages_and_code_block_tables(conn, cur)
-    #manual_importer.import_manually_split_conversations(conn)
+    manual_importer.import_manually_split_conversations(conn)
     #importer.create_prompts_table(conn, cur)
-    prompt_parser.parse_prompts(conn, cur) # parses each prompt into conversational, code and other parts
+    #prompt_parser.parse_prompts(conn, cur) # parses each prompt into conversational, code and other parts
     #prompt_parser.populate_table_retry(conn, cur) # in some cases the system prompt leaked into the results, retrying these
     #prompt_parser.classify_other_again(conn, cur) # some conversational parts were falsely classified as other, retrying these with another system prompt
     #importer.assign_most_used_model_versions(conn, cur)

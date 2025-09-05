@@ -129,7 +129,7 @@ def run_t_test_on_gender(df, dependent_variable):
 
     t_stat, p_value = stats.ttest_ind(male, female, equal_var=False)
 
-    print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+    print(f" {dependent_variable}: T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
 
 
 def make_annotated_code_blocks_query():

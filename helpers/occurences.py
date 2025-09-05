@@ -1,4 +1,5 @@
 import spacy
+import collections
 
 def load_spacy_lanuage_model() -> spacy.language.Language:
     try:
@@ -9,7 +10,7 @@ def load_spacy_lanuage_model() -> spacy.language.Language:
         return spacy.load("en_core_web_sm")
 
 
-################ UNIGRAMS
+########## UNIGRAMS
 
 
 def get_sec_per_sg_pronouns(text, spacy_model) -> int:
@@ -33,27 +34,22 @@ def get_first_per_pl_pronouns(text, spacy_model) -> int:
     #print("First person plural pronoun count:", count)
     return count
 
-def count_please(text: str) -> int:
-    # please, pls, plz
-    return text.lower().count("please") + text.lower().count("pls") + text.lower().count("plz")
 
-def count_thanks(text: str) -> int:
-    return text.lower().count("thanks")
+def count_occurrences(text: str, pattern: str, as_word: bool = True) -> int:
+    """
+    Counts occurrences of a pattern in the text.
 
-def count_sorry(text: str) -> int:
-    return text.lower().count("sorry")
-
-def count_greetings(text: str) -> int:
-    # Match only standalone "hi", not "high", "highlight", etc.
+    :param text: The text to search within.
+    :param pattern: The substring or word to count.
+    :param as_word: If True, counts only whole word matches using regex word boundaries.
+    :return: The number of occurrences.
+    """
     import re
-    hi = len(re.findall(r'\bhi\b', text.lower()))
-    hello = len(re.findall(r'\bhello\b', text.lower()))
-    hey = len(re.findall(r'\bhey\b', text.lower()))
-    return hi + hello + hey
-
-def count_help(text: str):
-    import re
-    return len(re.findall(r'\bhelp\b', text.lower()))
+    if as_word:
+        regex = r'\b{}\b'.format(re.escape(pattern.lower()))
+        return len(re.findall(regex, text.lower()))
+    else:
+        return text.lower().count(pattern.lower())
 
 
 ####### BIGRAMS
@@ -65,22 +61,24 @@ def count_bigrams(text, spacy_model, n_most_common=10):
 
     bigram_list = [(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)]
     bigram_counter = Counter(bigram_list)
-
-
-    #return bigram_counter.most_common(n_most_common)
     return bigram_counter
 
 
+def count_would_like(text: str) -> int:
+   return text.lower().count("would like")
 
-
-#def count_would_like(text: str) -> int:
- #   return text.lower().count("would like")
-
-# def count_thank_you(text: str) -> int:
-#   return text.lower().count("thank you")
+def count_thank_you(text: str) -> int:
+ return text.lower().count("thank you")
 
 def count_could_you(text: str) -> int:
     return text.lower().count("could you")
 
 def count_can_you(text: str) -> int:
     return text.lower().count("can you")
+
+def merge_counts(counts_list):
+    import collections
+    total_counts = collections.Counter()
+    for counts in counts_list:
+        total_counts.update(counts)
+    return dict(total_counts)

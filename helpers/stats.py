@@ -123,8 +123,8 @@ def make_code_blocks_with_convo_id_query():
 
 
 def run_t_test_on_gender(df, dependent_variable):
-    female = df[df['gender'] == 'Woman (cisgender)'][dependent_variable]
-    male = df[df['gender'] == 'Man (cisgender)'][dependent_variable]
+    female = df[df['gender'] == 'Woman (cisgender)'][dependent_variable].dropna()
+    male = df[df['gender'] == 'Man (cisgender)'][dependent_variable].dropna()
 
 
     t_stat, p_value = stats.ttest_ind(male, female, equal_var=False)

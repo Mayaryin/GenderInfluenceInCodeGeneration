@@ -1,5 +1,7 @@
 import spacy
 import collections
+from collections import Counter
+import string
 
 def load_spacy_lanuage_model() -> spacy.language.Language:
     try:
@@ -50,6 +52,18 @@ def count_occurrences(text: str, pattern: str, as_word: bool = True) -> int:
         return len(re.findall(regex, text.lower()))
     else:
         return text.lower().count(pattern.lower())
+
+
+
+def count_punctuation(text):
+    standard_punctuation = ".,!?;:'\"-()[]\n"
+    return Counter(c for c in text if c in standard_punctuation)
+
+def count_newlines(text):
+    return text.count("\n")
+
+def divide_counts(counts_dict, total_tokens):
+    return Counter({k: v / total_tokens for k, v in counts_dict.items()})
 
 
 ####### BIGRAMS

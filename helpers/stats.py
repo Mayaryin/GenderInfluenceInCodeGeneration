@@ -1,8 +1,5 @@
 import sqlite3
 
-import numpy as np
-import pandas as pd
-from scipy import stats
 
 def get_user_stats():
     connection = sqlite3.connect("../giicg.db")
@@ -124,22 +121,6 @@ def make_code_blocks_with_convo_id_query():
            '''
 
 
-def run_t_test_on_gender(df, dependent_variable):
-    female = df[df['gender'] == 'Woman (cisgender)'][dependent_variable].dropna()
-    male = df[df['gender'] == 'Man (cisgender)'][dependent_variable].dropna()
-
-
-    t_stat, p_value = stats.ttest_ind(male, female, equal_var=False)
-
-    female_var = np.var(female, ddof=1)
-    male_var = np.var(male, ddof=1)
-    n_female = len(female)
-    n_male = len(male)
-
-    print(f"{dependent_variable}:")
-    print(f"  T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
-    print(f"  Female: n={n_female}, variance={female_var:.4f}")
-    print(f"  Male:   n={n_male}, variance={male_var:.4f}")
 
 
 def make_annotated_code_blocks_query():
@@ -163,7 +144,5 @@ WHERE
     cb.language = 'python'
     AND (LENGTH(cb.code_text) - LENGTH(REPLACE(cb.code_text, CHAR(10), ''))) > 4
         """
-
-
 
 

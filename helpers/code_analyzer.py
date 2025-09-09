@@ -6,7 +6,7 @@ import os
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 
-from helpers.stats import run_t_test_on_gender
+from helpers.statistical_tests import run_t_test_on_gender
 
 pd.set_option("display.max_columns", None)  # Show all columns
 pd.set_option("display.width", None)        # Don't wrap lines (use full width)

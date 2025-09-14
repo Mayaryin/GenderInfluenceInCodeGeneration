@@ -2,4 +2,4 @@
 load-plugins=pylint.extensions.typing, pylint.extensions.bad_builtin
 
 [MESSAGES CONTROL]
-disable=C0114,C0304,E0401,E0602,C0303,E0601,W0404
+disable=C0114,C0304,E0401,E0602,C0303,E0601,W0404, C0413, W0621, E0102

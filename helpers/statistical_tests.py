@@ -42,12 +42,12 @@ def compare_genders(df, dependent_variable, prt=False):
         t_stat, p_value = stats.ttest_ind(male, female, equal_var=False)
         if (prt):
             print(f"  T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
-        return  p_value, 'T-test', female_var, male_var, nonzero_female, nonzero_male
+        return  t_stat, p_value, 'T-test', female_var, male_var, nonzero_female, nonzero_male
     else:
         stat, p_value = stats.mannwhitneyu(male, female, alternative='two-sided')
         if (prt):
             print(f"Mann-Whitney U test: stat={stat:.4f}, p-value={p_value:.4f}")
-        return  p_value, 'U-test', female_var, male_var, nonzero_female, nonzero_male
+        return  stat, p_value, 'U-test', female_var, male_var, nonzero_female, nonzero_male
 
 
 def shapiro_wilk(female, male, dependent_variable, prt=False):

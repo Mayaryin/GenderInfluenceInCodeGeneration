@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import stats
+from statsmodels.stats.weightstats import ttest_ind
+
 
 
 def run_t_test_on_gender(df, dependent_variable, prt=False):
@@ -34,13 +36,16 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
     female = df[df['gender'] == 'Woman (cisgender)'][dependent_variable].dropna()
     male = df[df['gender'] == 'Man (cisgender)'][dependent_variable].dropna()
 
-    nonzero_female = (female != 0).sum()
-    nonzero_male = (male != 0).sum()
-
+    mean_female = np.mean(female)
+    mean_male = np.mean(male)
+    std_female = np.std(female, ddof=1)
+    std_male = np.std(male, ddof=1)
     female_var = np.var(female, ddof=1)
     male_var = np.var(male, ddof=1)
     n_female = len(female)
     n_male = len(male)
+    nonzero_female = (female != 0).sum()
+    nonzero_male = (male != 0).sum()
 
     if prt:
         print(f"{dependent_variable}:")
@@ -49,19 +54,47 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
 
     if shapiro_wilk(female, male, dependent_variable):
         if one_sided:
-            t_stat, p_value = stats.ttest_ind(male, female, equal_var=False, alternative=direction)
+            t_stat, p_value, df = ttest_ind(male, female, usevar='unequal', alternative=direction)
         else:
-            t_stat, p_value = stats.ttest_ind(male, female, equal_var=False)  # default 'two-sided'
+            t_stat, p_value, df = ttest_ind(male, female, usevar='unequal')  # default 'two-sided'
             direction = "two-sided"
         if prt:
             print(f"  T-statistic: {t_stat:.4f}, p-value: {p_value:.4f} ({direction})")
-        return t_stat, p_value, 'T-test', female_var, male_var, nonzero_female, nonzero_male
+
+        return {
+            'test_statistic': t_stat,
+            'df': df,
+            'p_value': p_value,
+            'test_type': 'T-test',
+            'mean_female': mean_female,
+            'mean_male': mean_male,
+            'std_female': std_female,
+            'std_male': std_male,
+            'n_female': n_female,
+            'n_male': n_male,
+            'hits_female': nonzero_female,
+            'hits_male': nonzero_male,
+        }
+
     else:
         alternative = direction if one_sided else "two-sided"
         stat, p_value = stats.mannwhitneyu(male, female, alternative=alternative)
         if prt:
             print(f"Mann-Whitney U test: stat={stat:.4f}, p-value={p_value:.4f} ({alternative})")
-        return stat, p_value, 'U-test', female_var, male_var, nonzero_female, nonzero_male
+        return {
+            'test_statistic': stat,
+            'df': None,
+            'p_value': p_value,
+            'test_type': 'U-test',
+            'mean_female': mean_female,
+            'mean_male': mean_male,
+            'std_female': std_female,
+            'std_male': std_male,
+            'n_female': n_female,
+            'n_male': n_male,
+            'hits_female': nonzero_female,
+            'hits_male': nonzero_male,
+        }
 
 
 def shapiro_wilk(female, male, dependent_variable, prt=False):

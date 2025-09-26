@@ -22,6 +22,7 @@ def run_t_test_on_gender(df, dependent_variable, prt=False):
         print(f"  Male:   n={n_male}, variance={male_var:.4f}")
 
 
+import pingouin as pg
 
 def compare_genders(df, dependent_variable, prt=False, one_sided=False, direction="greater"):
     """
@@ -38,6 +39,8 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
 
     mean_female = np.mean(female)
     mean_male = np.mean(male)
+    median_female = np.median(female)
+    median_male = np.median(male)
     std_female = np.std(female, ddof=1)
     std_male = np.std(male, ddof=1)
     female_var = np.var(female, ddof=1)
@@ -47,6 +50,43 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
     nonzero_female = (female != 0).sum()
     nonzero_male = (male != 0).sum()
 
+    # Use Fisher's exact test if either group is very small
+    if nonzero_female <= 5 and nonzero_male <= 5:
+        from scipy.stats import fisher_exact
+
+        # Create a 2x2 table: rows = gender, columns = nonzero/zero
+        zero_female = n_female - nonzero_female
+        zero_male = n_male - nonzero_male
+        table = [[nonzero_female, zero_female], [nonzero_male, zero_male]]
+
+        # Set alternative
+        alt_map = {"greater": "greater", "less": "less", "two-sided": "two-sided"}
+        alternative = alt_map.get(direction, "two-sided")
+        oddsratio, p_value = fisher_exact(table, alternative=alternative)
+
+        if prt:
+            print(f"  Fisher's exact test table: {table}")
+            print(f"  Odds ratio: {oddsratio:.4f}, p-value: {p_value:.4f} ({direction})")
+
+        return {
+            'test_statistic': oddsratio,
+            'direction': direction,
+            'one_sided': one_sided,
+            'df': None,
+            'p_value': p_value,
+            'test_type': "Fisher's exact",
+            'm_female': mean_female,
+            'm_male': mean_male,
+            'std_female': None,
+            'std_male': None,
+            'n_female': None,
+            'n_male': None,
+            'hits_female': nonzero_female,
+            'hits_male': nonzero_male,
+            'effect_size': oddsratio,
+            'effect_size_type': "Odds ratio"
+        }
+
     if prt:
         print(f"{dependent_variable}:")
         print(f"  Female: n={n_female}, variance={female_var:.4f}")
@@ -54,48 +94,64 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
 
     if shapiro_wilk(female, male, dependent_variable):
         if one_sided:
-            t_stat, p_value, df = ttest_ind(male, female, usevar='unequal', alternative=direction)
+            t_stat, p_value, df_ = ttest_ind(male, female, usevar='unequal', alternative=direction)
         else:
-            t_stat, p_value, df = ttest_ind(male, female, usevar='unequal')  # default 'two-sided'
+            t_stat, p_value, df_ = ttest_ind(male, female, usevar='unequal')
             direction = "two-sided"
+        # Compute Cohen's d
+        effsize = pg.compute_effsize(male, female, eftype='cohen')
         if prt:
             print(f"  T-statistic: {t_stat:.4f}, p-value: {p_value:.4f} ({direction})")
+            print(f"  Effect size (Cohen's d): {effsize:.4f}")
 
         return {
             'test_statistic': t_stat,
-            'df': df,
+            'one_sided': one_sided,
+            'direction': direction,
+            'df': df_,
             'p_value': p_value,
             'test_type': 'T-test',
-            'mean_female': mean_female,
-            'mean_male': mean_male,
+            'm_female': mean_female,
+            'm_male': mean_male,
             'std_female': std_female,
             'std_male': std_male,
             'n_female': n_female,
             'n_male': n_male,
             'hits_female': nonzero_female,
             'hits_male': nonzero_male,
+            'effect_size': effsize,
+            'effect_size_type': 'Cohen\'s d',
         }
 
     else:
+        direction = "less" if direction == "smaller" else "greater"
         alternative = direction if one_sided else "two-sided"
-        stat, p_value = stats.mannwhitneyu(male, female, alternative=alternative)
+        result = pg.mwu(x=male, y=female, alternative=alternative)
+        # result is a one-row DataFrame; extract the values
+        row = result.iloc[0]
+
         if prt:
-            print(f"Mann-Whitney U test: stat={stat:.4f}, p-value={p_value:.4f} ({alternative})")
+            print(f"  U-statistic: {row['U-val']:.4f}, z-value: {row['z-val']:.4f}, p-value: {row['p-val']:.4f}")
+            print(f"  Effect size (r): {row['effsize']:.4f}")
+
         return {
-            'test_statistic': stat,
+            'test_statistic': row['U-val'],
+            'direction': direction,
+            'one_sided': one_sided,
             'df': None,
-            'p_value': p_value,
-            'test_type': 'U-test',
-            'mean_female': mean_female,
-            'mean_male': mean_male,
+            'p_value': row['p-val'],
+            'test_type': 'Mann-Whitney U',
+            'm_female': median_female,
+            'm_male': median_male,
             'std_female': std_female,
             'std_male': std_male,
             'n_female': n_female,
             'n_male': n_male,
             'hits_female': nonzero_female,
             'hits_male': nonzero_male,
+            'effect_size': row['RBC'],
+            'effect_size_type': "RBC"
         }
-
 
 def shapiro_wilk(female, male, dependent_variable, prt=False):
     stat_female, p_female = stats.shapiro(female)

@@ -75,8 +75,8 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
             'df': None,
             'p_value': p_value,
             'test_type': "Fisher's exact",
-            'm_female': mean_female,
-            'm_male': mean_male,
+            'm_female': None,
+            'm_male': None,
             'std_female': None,
             'std_male': None,
             'n_female': None,
@@ -84,7 +84,8 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
             'hits_female': nonzero_female,
             'hits_male': nonzero_male,
             'effect_size': oddsratio,
-            'effect_size_type': "Odds ratio"
+            'effect_size_type': "Odds ratio",
+            'effect_size_CI': None
         }
 
     if prt:
@@ -100,9 +101,11 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
             direction = "two-sided"
         # Compute Cohen's d
         effsize = pg.compute_effsize(male, female, eftype='cohen')
+        ci = pg.compute_bootci(male, female, func='cohen', n_boot=1000, confidence=0.95)
+
         if prt:
             print(f"  T-statistic: {t_stat:.4f}, p-value: {p_value:.4f} ({direction})")
-            print(f"  Effect size (Cohen's d): {effsize:.4f}")
+            print(f"  Effect size (Cohen's d): {effsize:.4f} (95% CI: [{ci[0]:.3f}, {ci[1]:.3f}])")
 
         return {
             'test_statistic': t_stat,
@@ -121,18 +124,30 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
             'hits_male': nonzero_male,
             'effect_size': effsize,
             'effect_size_type': 'Cohen\'s d',
+            'effect_size_CI': ci
         }
 
     else:
         direction = "less" if direction == "smaller" else "greater"
         alternative = direction if one_sided else "two-sided"
         result = pg.mwu(x=male, y=female, alternative=alternative)
+
         # result is a one-row DataFrame; extract the values
         row = result.iloc[0]
+        effsize = row['RBC']
+
+        # define custom function for ci bootstrapping
+        def rbc_stat(x, y):
+            result = pg.mwu(x=x, y=y, alternative=alternative)
+            row = result.iloc[0]
+            return row['RBC']
+
+        #determine cis
+        ci = pg.compute_bootci(male, female, func=rbc_stat, n_boot=1000, confidence=0.95)
 
         if prt:
             print(f"  U-statistic: {row['U-val']:.4f}, z-value: {row['z-val']:.4f}, p-value: {row['p-val']:.4f}")
-            print(f"  Effect size (r): {row['effsize']:.4f}")
+            print(f"  Effect size (RBC/r): {effsize:.4f} (95% CI: [{ci[0]:.3f}, {ci[1]:.3f}])")
 
         return {
             'test_statistic': row['U-val'],
@@ -149,8 +164,9 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
             'n_male': n_male,
             'hits_female': nonzero_female,
             'hits_male': nonzero_male,
-            'effect_size': row['RBC'],
-            'effect_size_type': "RBC"
+            'effect_size': effsize,
+            'effect_size_type': "RBC",
+            'effect_size_CI': ci     # [lower, upper]
         }
 
 def shapiro_wilk(female, male, dependent_variable, prt=False):

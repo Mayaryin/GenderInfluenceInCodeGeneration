@@ -188,3 +188,5 @@ def shapiro_wilk(female, male, dependent_variable, prt=False):
         if (prt):
             print("At least one of the distributions is not normal, so we cannot run a t-test.")
         return False
+
+

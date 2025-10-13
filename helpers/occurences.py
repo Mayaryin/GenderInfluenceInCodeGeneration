@@ -56,7 +56,7 @@ def count_occurrences(text: str, pattern: str, as_word: bool = True) -> int:
 
 
 def count_punctuation(text):
-    standard_punctuation = ".,!?;:'\"-()[]\n"
+    standard_punctuation = ".,!?;:'\"()[]\n"
     return Counter(c for c in text if c in standard_punctuation)
 
 def count_newlines(text):

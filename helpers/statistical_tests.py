@@ -37,8 +37,8 @@ def compare_genders(df, dependent_variable, prt=False, one_sided=False, directio
     female = df[df['gender'] == 'Woman (cisgender)'][dependent_variable].dropna()
     male = df[df['gender'] == 'Man (cisgender)'][dependent_variable].dropna()
 
-    mean_female = np.mean(female)
-    mean_male = np.mean(male)
+    mean_female = female.mean()
+    mean_male = male.mean()
     median_female = np.median(female)
     median_male = np.median(male)
     std_female = np.std(female, ddof=1)

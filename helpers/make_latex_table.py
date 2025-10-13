@@ -38,7 +38,7 @@ def create_latex_tables(df: pd.DataFrame, stats_file: str, effectsize_file: str)
         else:
             return s
 
-    # ---------- Statistics Table ----------
+    # -------- Table 1: Statistics Summary --------
     def stat_row(row):
         test_type = row.get("test type", "")
         if test_type == "T-test":
@@ -58,48 +58,12 @@ def create_latex_tables(df: pd.DataFrame, stats_file: str, effectsize_file: str)
             s = s[:-1] + r"^{1}$"
         return s
 
-    stats_out = pd.DataFrame()
-    stats_out["Subject"] = df["word"].apply(lambda x: str(x) if pd.notnull(x) else "-")
-    stats_out["stat"] = df.apply(stat_row, axis=1)
-    stats_out["corr. p"] = df["corrected p_value"].apply(bold_if_p)
-    stats_out["M(SD) m"] = df.apply(
-        lambda r: f"{format_number(r.get('mean_m'))} ({format_number(r.get('std_m'))})", axis=1
-    )
-    stats_out["M(SD) f"] = df.apply(
-        lambda r: f"{format_number(r.get('mean_f'))} ({format_number(r.get('std_f'))})", axis=1
-    )
-    stats_out["Hits (m;f)"] = df.apply(
-        lambda r: f"{r.get('n_hits_m', '-')}; {r.get('n_hits_f', '-')}", axis=1
-    )
-    # Pass test type to the bold effect size function
-    stats_out["eff. size"] = df.apply(lambda r: bold_if_effsize(r.get("effsize"), test_type=r.get("test type")), axis=1)
-
-    stats_latex = stats_out.to_latex(index=False, na_rep="-", escape=False, header=True, column_format='lllllcrl')
-    stats_headers = [
-        "subject", "statistic", "$p_{corr}$", "$M_m$($SD_m$)", "$M_f$($SD_f$)",
-        "Hits (m;f)", "$d$/$r$/OR"
-    ]
-    stats_bold_headers = " & ".join([f"\\textbf{{{h}}}" for h in stats_headers]) + " \\\\"
-    lines = stats_latex.splitlines()
-    for i, line in enumerate(lines):
-        if line.strip().startswith("Subject"):
-            lines[i] = stats_bold_headers
-            break
-    stats_caption = (
-        "\\caption{Significant corrected effects ($p < 0.05$). The superscript ¹ denotes a one-sided t-test.}\n"
-    )
-    font_size = "\\scriptsize \n\\setlength{\\tabcolsep}{3pt} \n"
-    stats_table = "\\begin{table}\n" + font_size + "\n".join(lines) + stats_caption + "\n\\end{table}"
-
-    with open(stats_file, "w") as f:
-        f.write(stats_table)
-
-    # ---------- Effect Size Table ----------
-    eff_out = pd.DataFrame()
-    eff_out["Subject"] = df["word"].apply(lambda x: str(x) if pd.notnull(x) else "-")
-    # Pass test type to bold_if_effsize, so Fisher's exact never gets bold
-    eff_out["eff size"] = df.apply(lambda r: bold_if_effsize(r.get("effsize"), test_type=r.get("test type")), axis=1)
-    eff_out["CI (95\\%)"] = df["ci"].apply(
+    stats_summary = pd.DataFrame()
+    stats_summary["Subject"] = df["word"].apply(lambda x: str(x) if pd.notnull(x) else "-")
+    stats_summary["stat"] = df.apply(stat_row, axis=1)
+    stats_summary["$p_{corr}$"] = df["corrected p_value"].apply(bold_if_p)
+    stats_summary["Effect Size"] = df.apply(lambda r: bold_if_effsize(r.get("effsize"), test_type=r.get("test type")), axis=1)
+    stats_summary["CI (95\\%)"] = df["ci"].apply(
         lambda arr: (
             f"[{arr[0]:.3f}, {arr[1]:.3f}]"
             if isinstance(arr, (list, tuple, np.ndarray)) and len(arr) == 2
@@ -107,19 +71,68 @@ def create_latex_tables(df: pd.DataFrame, stats_file: str, effectsize_file: str)
         )
     )
 
-    eff_latex = eff_out.to_latex(index=False, na_rep="-", escape=False, header=True, column_format='lll')
-    eff_headers = ["subject", "eff. size", "CI (95\\%)"]
-    eff_bold_headers = " & ".join([f"\\textbf{{{h}}}" for h in eff_headers]) + " \\\\"
-    eff_lines = eff_latex.splitlines()
-    for i, line in enumerate(eff_lines):
-        if line.strip().startswith("Subject"):
-            eff_lines[i] = eff_bold_headers
-            break
-    eff_caption = (
-        "\\caption{Effect sizes and their bootstrapped 95\\% confidence intervals. "
-        "Noticeable effect sizes ($> 0.5$) are marked in bold}\n"
+    stats_summary_latex = stats_summary.to_latex(
+        index=False, na_rep="-", escape=False, header=True, column_format='llllc'
     )
-    eff_table = "\\begin{table}\n" + font_size + "\n".join(eff_lines) + eff_caption + "\n\\end{table}"
+    stats_summary_headers = [
+        "Subject", "stat", "$p_{corr}$", "Effect Size", "CI (95\\%)"
+    ]
+    stats_summary_header_row = " & ".join(stats_summary_headers) + " \\\\"
+    summary_lines = stats_summary_latex.splitlines()
+    for i, line in enumerate(summary_lines):
+        if line.strip().startswith("Subject"):
+            summary_lines[i] = stats_summary_header_row
+            break
+    summary_caption = (
+        "\\caption{Comparisons of XXX across genders. Group descriptive statistics and hits are in Table \\ref{tab:} in Appendix \\ref{app:prompt_analysis}}\n"
+    )
+    font_size = "\\small \n\\setlength{\\tabcolsep}{3pt}\n"
+    stats_table = (
+            "\\begin{table}[H]\n"
+            + "\\centering\n"
+            + font_size
+            + "\n".join(summary_lines)
+            + "\n"
+            + summary_caption
+            + "\\end{table}\n"
+    )
+    with open(stats_file, "w") as f:
+        f.write(stats_table)
 
+    # -------- Table 2: Means & Hits --------
+    means_hits = pd.DataFrame()
+    means_hits["Subject"] = df["word"].apply(lambda x: str(x) if pd.notnull(x) else "-")
+    means_hits["$M_m$($SD_m$)"] = df.apply(
+        lambda r: f"{format_number(r.get('mean_m'))} ({format_number(r.get('std_m'))})", axis=1
+    )
+    means_hits["$M_f$($SD_f$)"] = df.apply(
+        lambda r: f"{format_number(r.get('mean_f'))} ({format_number(r.get('std_f'))})", axis=1
+    )
+    means_hits["Hits (m;f)"] = df.apply(
+        lambda r: f"{r.get('n_hits_m', '-')}; {r.get('n_hits_f', '-')}", axis=1
+    )
+
+    means_hits_latex = means_hits.to_latex(
+        index=False, na_rep="-", escape=False, header=True, column_format='lllc'
+    )
+    means_hits_headers = [
+        "Subject", "$M_m$($SD_m$)", "$M_f$($SD_f$)", "Hits (m;f)"
+    ]
+    means_hits_header_row = " & ".join(means_hits_headers) + " \\\\"
+    hits_lines = means_hits_latex.splitlines()
+    for i, line in enumerate(hits_lines):
+        if line.strip().startswith("Subject"):
+            hits_lines[i] = means_hits_header_row
+            break
+    hits_caption = "\\caption{Means (and standard deviations) for men and women, and number of hits for each group.}\n"
+    means_hits_table = (
+            "\\begin{table}[H]\n"
+            + "\\centering\n"
+            + font_size
+            + "\n".join(hits_lines)
+            + "\n"
+            + hits_caption
+            + "\\end{table}\n"
+    )
     with open(effectsize_file, "w") as f:
-        f.write(eff_table)
+        f.write(means_hits_table)

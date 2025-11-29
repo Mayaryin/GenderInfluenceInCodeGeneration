@@ -2,7 +2,7 @@ import sqlite3
 
 
 def get_user_stats():
-    connection = sqlite3.connect("../giicg.db")
+    connection = sqlite3.connect("../data/giicg.db")
     cursor = connection.cursor()
     cursor.execute('''
                    SELECT gender, COUNT(*) FROM users WHERE users.lastpage > 2 GROUP BY gender;'''
@@ -49,7 +49,7 @@ def get_user_stats():
     connection.close()
 
 def get_conversation_stats():
-    connection = sqlite3.connect("../giicg.db")
+    connection = sqlite3.connect("../data/giicg.db")
     cursor = connection.cursor()
 
     cursor.execute('''
@@ -95,7 +95,7 @@ def make_average_convo_length_query():
 
 
 def get_average_convo_length():
-    connection = sqlite3.connect("../giicg.db")
+    connection = sqlite3.connect("../data/giicg.db")
     cursor = connection.cursor()
     cursor.execute(make_average_convo_length_query())
     rows = cursor.fetchall()

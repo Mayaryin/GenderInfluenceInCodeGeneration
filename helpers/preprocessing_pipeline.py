@@ -50,7 +50,7 @@ def fill_tables(conn, cur):
     #prompt_parser.classify_other_again(conn, cur) # some conversational parts were falsely classified as other, retrying these with another system prompt
     #importer.assign_most_used_model_versions(conn, cur)
 
-connection = sqlite3.connect("../giicg.db")
+connection = sqlite3.connect("../data/giicg.db")
 cursor = connection.cursor()
 #prepare_database(connection, cursor, FILENAME)
 fill_tables(connection, cursor)

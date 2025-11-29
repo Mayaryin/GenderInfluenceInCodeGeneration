@@ -1,6 +1,6 @@
 # Gender Influence in Code Generation - Examining Prompting Styles and Bias in Large Language Models
 
-This repository contains the code for linguistic analyses, gender prediction and finetuning, as well as code quality analyses.
+This repository contains the code for linguistic analyses, gender prediction and finetuning, as well as code quality analyses that were conducted in the thesis.
 
 To work with the notebooks, install the required python libraries:
 
